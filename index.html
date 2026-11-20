@@ -71,6 +71,7 @@
   <script>
     let scanner;
     let active = false;
+    let checkingTicket = false;
     let lastScan = 0;
 
     async function startScanner() {
@@ -81,18 +82,46 @@
           { facingMode: "environment" },
           { fps: 10, qrbox: 250 },
           code => {
-            const now = Date.now();
-            if (now - lastScan < 2000) return;
-            lastScan = now;
+           
+async code => {
+  if (checkingTicket) return;
+  checkingTicket = true;
 
-            const validFormat =
-              /^MMC26:[A-Za-z0-9_-]{15,80}$/.test(code);
+  try {
+    const validFormat =
+      /^MMC26:[A-Za-z0-9_-]{15,80}$/.test(code);
 
-            document.getElementById("result").textContent =
-              validFormat
-                ? "QR CODE READ SUCCESSFULLY"
-                : "UNRECOGNIZED QR FORMAT";
-          },
+    if (!validFormat) {
+      document.getElementById("result").textContent =
+        "INVALID QR CODE - DO NOT ADMIT";
+      return;
+    }
+
+    if (!googleAccessToken) {
+      document.getElementById("result").textContent =
+        "SIGN IN WITH GOOGLE FIRST";
+      return;
+    }
+
+    document.getElementById("result").textContent =
+      "VERIFYING TICKET...";
+
+    const response = await verifyGraduationTicket(
+      code,
+      "STAFF"
+    );
+
+    document.getElementById("result").textContent =
+      response.message || "Verification failed";
+
+  } catch (error) {
+    document.getElementById("result").textContent =
+      "VERIFICATION ERROR - DO NOT ADMIT";
+    console.error(error);
+  } finally {
+    checkingTicket = false;
+  }
+},
           () => {}
         );
         active = true;
