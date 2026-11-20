@@ -112,6 +112,39 @@
       document.getElementById("start").disabled = false;
       document.getElementById("stop").disabled = true;
     }
+    const GOOGLE_CLIENT_ID = 'PASTE_CLIENT_ID_HERE';
+
+let googleAccessToken = null;
+
+function signInGoogle() {
+  if (!window.google || !google.accounts) {
+    document.getElementById('signInStatus').textContent =
+      'Google Sign-In is still loading. Try again.';
+    return;
+  }
+
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
+    callback: function(response) {
+      if (response.error || !response.access_token) {
+        document.getElementById('signInStatus').textContent =
+          'Google sign-in failed.';
+        return;
+      }
+
+      googleAccessToken = response.access_token;
+
+      document.getElementById('signInStatus').textContent =
+        'Google authorization successful';
+
+      document.getElementById('signInBtn').textContent =
+        'Reconnect Google';
+    }
+  });
+
+  client.requestAccessToken();
+}
   </script>
 </body>
 </html>
