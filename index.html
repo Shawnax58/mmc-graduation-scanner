@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+  <title>MMC Graduation Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f1f3f7;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+    }
+    .card {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 22px;
+      border-radius: 14px;
+    }
+    h1 { color: #173a70; }
+    button {
+      width: 100%;
+      padding: 16px;
+      margin: 8px 0;
+      background: #173a70;
+      color: white;
+      border: 0;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    button:disabled { opacity: .5; }
+    #reader { width: 100%; margin: 16px 0; }
+    #result {
+      padding: 18px;
+      margin-top: 15px;
+      border-radius: 10px;
+      background: #fff3cd;
+      overflow-wrap: anywhere;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>MMC Graduation Scanner</h1>
+    <p>December 4, 2026</p>
+    <button id="start" onclick="startScanner()">
+      Start Camera
+    </button>
+    <button id="stop" onclick="stopScanner()" disabled>
+      Stop Camera
+    </button>
+    <div id="reader"></div>
+    <div id="result" role="status">
+      Camera not started
+    </div>
+  </div>
+
+  <script>
+    let scanner;
+    let active = false;
+    let lastScan = 0;
+
+    async function startScanner() {
+      if (active) return;
+      try {
+        scanner = new Html5Qrcode("reader");
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: 250 },
+          code => {
+            const now = Date.now();
+            if (now - lastScan < 2000) return;
+            lastScan = now;
+
+            const validFormat =
+              /^MMC26:[A-Za-z0-9_-]{15,80}$/.test(code);
+
+            document.getElementById("result").textContent =
+              validFormat
+                ? "QR CODE READ SUCCESSFULLY"
+                : "UNRECOGNIZED QR FORMAT";
+          },
+          () => {}
+        );
+        active = true;
+        document.getElementById("start").disabled = true;
+        document.getElementById("stop").disabled = false;
+      } catch (error) {
+        document.getElementById("result").textContent =
+          "Camera error: " + String(error);
+      }
+    }
+
+    async function stopScanner() {
+      if (!active) return;
+      await scanner.stop();
+      scanner.clear();
+      active = false;
+      document.getElementById("start").disabled = false;
+      document.getElementById("stop").disabled = true;
+    }
+  </script>
+</body>
+</html>
