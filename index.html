@@ -114,6 +114,43 @@
     }
     const GOOGLE_CLIENT_ID = '396718987346-ihten8abk00q29ae8kf338aosnpprj47.apps.googleusercontent.com';
 const SCRIPT_ID = '1HCgAR9e0d4GYPFcI2T3XNrg6eeBTh60lO3WLRuptGVlzhD92B2ohc4H6';
+    
+async function verifyGraduationTicket(qrCode, staffInitials) {
+  if (!googleAccessToken) {
+    return {
+      type: 'error',
+      message: 'Please sign in with Google first.'
+    };
+  }
+
+  const response = await fetch(
+    `https://script.googleapis.com/v1/scripts/${encodeURIComponent(SCRIPT_ID)}:run`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${googleAccessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        function: 'verify',
+        parameters: [qrCode, staffInitials],
+        devMode: false
+      })
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok || data.error) {
+    throw new Error(data.error?.message || 'Verification failed.');
+  }
+
+  if (data.response?.result) {
+    return data.response.result;
+  }
+
+  throw new Error('No verification result returned.');
+}
 let googleAccessToken = null;
 
 function signInGoogle() {
